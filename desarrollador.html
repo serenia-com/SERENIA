@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>SERENIA · Panel desarrollador</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@300;400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f3ede2; --surface:#fffdf9; --surface2:#f8f3ea; --fg:#3f2d49; --muted:#7d756b; --line:#e2d8c6;
+  --salvia:#8D9B84; --salvia-d:#5f6e58; --band:#76866d; --lav:#C8B5D9; --gold:#CFA34A; --gold-d:#8f6a1c; --danger:#a8483d; --ok:#4c7a4a; --warn:#b07a12;
+  --display:"Cormorant Garamond",Georgia,serif; --body:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#18161b; --surface:#221f27; --surface2:#2a2630; --fg:#efe6d8; --muted:#b0a89d; --line:#3a3641;
+  --salvia:#8D9B84; --salvia-d:#b9c7b0; --band:#4f5d49; --lav:#8c7aa3; --gold:#CFA34A; --gold-d:#e0bd6c; --danger:#e0796d; --ok:#8fc48b; --warn:#e0b252; color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.5;font-weight:400}
+h1,h2,h3{font-family:var(--display);margin:0;font-weight:700;line-height:1.1}
+h1{font-size:2rem}h2{font-size:1.5rem}h3{font-size:1.15rem}
+p{margin:0}a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.note{color:var(--muted);font-size:.82rem}
+/* layout */
+.shell{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:100vh}
+.side{background:var(--band);color:#fffdf9;padding:18px 12px;position:sticky;top:0;height:100vh;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.side .brand{display:flex;align-items:center;gap:10px;padding:6px 10px 16px}
+.side .brand b{font-family:var(--display);font-size:1.6rem;letter-spacing:.2em;font-weight:600}
+.side .brand small{display:block;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;opacity:.8}
+.nav{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:0;background:transparent;color:inherit;text-align:left;width:100%;font-size:.9rem}
+.nav svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.nav:hover{background:rgba(255,255,255,.12)}
+.nav[aria-current="page"]{background:rgba(255,255,255,.22);font-weight:600}
+.nav .bd{margin-left:auto;background:var(--gold);color:#2b2118;border-radius:999px;font-size:.7rem;padding:1px 8px;font-weight:600}
+.side .sp{flex:1}
+.main{padding:clamp(14px,3vw,30px);min-width:0}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.top .sub{color:var(--muted);font-size:.85rem}
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .side{position:sticky;top:0;height:auto;flex-direction:row;overflow-x:auto;padding:8px;gap:4px;z-index:30;align-items:center}
+  .side .brand,.side .sp{display:none}
+  .nav{width:auto;white-space:nowrap;padding:9px 12px}
+}
+/* componentes */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:clamp(14px,2.4vw,22px)}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.kpi{display:grid;gap:4px}
+.kpi .l{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-family:var(--display);font-size:2rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:.78rem;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--band);background:var(--band);color:#fffdf9;padding:9px 16px;border-radius:8px;font-size:.85rem;font-weight:500;text-decoration:none}
+.btn:hover{filter:brightness(1.08)}
+.btn.alt{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn.alt:hover{border-color:var(--salvia)}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#2b2118}
+.btn.danger{background:transparent;color:var(--danger);border-color:var(--danger)}
+.btn.sm{padding:5px 11px;font-size:.78rem}
+.btn[disabled]{opacity:.5;pointer-events:none}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row.sb{justify-content:space-between}
+.fld{display:grid;gap:4px;min-width:0}
+.fld>label,.fld>.l{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fld input,.fld select,.fld textarea,.cell-in{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+.fld textarea{min-height:84px;resize:vertical}
+.fld input[type=color]{padding:2px;height:38px;width:64px}
+.fld input[type=checkbox]{width:auto}
+.f2{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.chk{display:flex;gap:8px;align-items:center}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:.86rem;vertical-align:middle}
+th{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--surface2);position:sticky;top:0}
+tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--surface2)}
+td.n,th.n{text-align:right}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 10px;font-size:.72rem;font-weight:600;border:1px solid var(--line);background:var(--surface2)}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.ok{color:var(--ok);border-color:var(--ok)}.pill.warn{color:var(--warn);border-color:var(--warn)}.pill.bad{color:var(--danger);border-color:var(--danger)}.pill.mu{color:var(--muted)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:transparent;padding:9px 14px;border-bottom:2px solid transparent;color:var(--muted);font-size:.86rem}
+.tabs button[aria-selected="true"]{color:var(--fg);border-color:var(--gold);font-weight:600}
+.empty{color:var(--muted);text-align:center;padding:34px 10px}
+.thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;background:var(--surface2);border:1px solid var(--line);flex:none}
+.ims{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.im{position:relative;aspect-ratio:1/1;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface2)}
+.im img{width:100%;height:100%;object-fit:cover}
+.im .x{position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;line-height:1}
+.im .t{position:absolute;left:5px;bottom:5px;background:var(--gold);color:#2b2118;font-size:.62rem;padding:0 7px;border-radius:8px;font-weight:600}
+.up{display:grid;place-items:center;text-align:center;aspect-ratio:1/1;border:1.5px dashed var(--salvia);border-radius:10px;color:var(--salvia-d);font-size:.78rem;cursor:pointer;padding:6px}
+.up:hover{background:var(--surface2)}
+.bar{display:grid;gap:3px}
+/* login */
+.login{max-width:380px;margin:9vh auto;display:grid;gap:14px}
+.login .logo{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+/* modal / drawer */
+.scrim{position:fixed;inset:0;background:rgba(20,15,25,.5);z-index:60}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--bg);z-index:61;overflow:auto;padding:20px;display:grid;gap:14px;align-content:start;border-left:1px solid var(--line)}
+.sheet.wide{width:min(820px,100%)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:.86rem;z-index:90;max-width:92%;text-align:center}
+.kv{display:grid;grid-template-columns:130px minmax(0,1fr);gap:4px 12px;font-size:.88rem}
+.kv dt{color:var(--muted)}.kv dd{margin:0;word-break:break-word}
+.code{font-family:ui-monospace,Menlo,monospace;font-size:.78rem;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;word-break:break-all}
+.step{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+.step i{width:28px;height:28px;border-radius:50%;background:var(--gold);color:#2b2118;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:.82rem}
+.chart{width:100%;height:auto;display:block}
+.chart text{font-family:var(--body);font-size:11px;fill:var(--muted)}
+.tip{position:fixed;pointer-events:none;background:var(--fg);color:var(--bg);padding:6px 10px;border-radius:8px;font-size:.78rem;z-index:99;display:none;white-space:nowrap}
+.warnbox{border:1px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent);border-radius:10px;padding:10px 14px;font-size:.85rem}
+.okbox{border:1px solid var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent);border-radius:10px;padding:10px 14px;font-size:.85rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="layer"></div>
+<div id="toast" class="toast" hidden></div>
+<div id="tip" class="tip"></div>
+<script>
+"use strict";
+const SB_URL = "https://chgisjxzyqgdwwpgpynx.supabase.co", SB_KEY = "sb_publishable_jNv4OyXLvHlBzkKAI37TZg_jKwo83xG", BUCKET = "serenia-media";
+const TOK = "serenia_sb_tok", REF = "serenia_sb_ref";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const cop = n => "$" + Math.round(Number(n || 0)).toLocaleString("es-CO");
+const uid = () => Math.random().toString(36).slice(2, 10);
+const clone = o => JSON.parse(JSON.stringify(o));
+const fdate = d => d ? new Date(d).toLocaleString("es-CO", {day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit"}) : "—";
+const dayKey = d => { const x = new Date(d); return x.getFullYear() + "-" + String(x.getMonth()+1).padStart(2,"0") + "-" + String(x.getDate()).padStart(2,"0"); };
+const ss = {
+  get(k){ try{ return sessionStorage.getItem(k) }catch(e){ return null } },
+  set(k,v){ try{ sessionStorage.setItem(k,v) }catch(e){} },
+  del(k){ try{ sessionStorage.removeItem(k) }catch(e){} }
+};
+let toastT;
+function toast(m){ const t = $("#toast"); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(()=>t.hidden = true, 3200); }
+
+/* ---------- Supabase ---------- */
+const sb = {
+  tok(){ return ss.get(TOK) },
+  async refresh(){
+    const r = ss.get(REF); if(!r) return false;
+    const res = await fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token", {method:"POST", headers:{apikey:SB_KEY, "Content-Type":"application/json"}, body:JSON.stringify({refresh_token:r})});
+    const j = await res.json(); if(!res.ok || !j.access_token) return false;
+    ss.set(TOK, j.access_token); ss.set(REF, j.refresh_token); return true;
+  },
+  async req(path, {method="GET", body, prefer}={}, retry=true){
+    const h = {apikey:SB_KEY, Authorization:"Bearer "+(sb.tok() || SB_KEY), "Content-Type":"application/json"};
+    if(prefer) h.Prefer = prefer;
+    const r = await fetch(SB_URL+path, {method, headers:h, body: body !== undefined ? JSON.stringify(body) : undefined});
+    if(r.status === 401 && retry && await sb.refresh()) return sb.req(path, {method, body, prefer}, false);
+    if(!r.ok){ let m = await r.text(); try{ m = JSON.parse(m).message || m }catch(e){} throw new Error(m); }
+    const t = await r.text(); return t ? JSON.parse(t) : null;
+  },
+  rpc(fn, args){ return sb.req("/rest/v1/rpc/"+fn, {method:"POST", body:args || {}}); },
+  async login(email, pass){
+    const res = await fetch(SB_URL+"/auth/v1/token?grant_type=password", {method:"POST", headers:{apikey:SB_KEY, "Content-Type":"application/json"}, body:JSON.stringify({email, password:pass})});
+    const j = await res.json(); if(!res.ok || !j.access_token) throw new Error("login");
+    ss.set(TOK, j.access_token); ss.set(REF, j.refresh_token);
+    const a = await sb.req("/rest/v1/admins?select=user_id");
+    if(!a || !a.length){ sb.logout(); throw new Error("noadmin"); }
+    S.email = email;
+  },
+  logout(){ ss.del(TOK); ss.del(REF); },
+  pub(path){ return SB_URL + "/storage/v1/object/public/" + BUCKET + "/" + path; },
+  async upload(blob, path, type){
+    const go = () => fetch(SB_URL+"/storage/v1/object/"+BUCKET+"/"+path, {method:"POST", headers:{apikey:SB_KEY, Authorization:"Bearer "+sb.tok(), "Content-Type":type, "x-upsert":"true"}, body:blob});
+    let r = await go(); if(r.status === 401 && await sb.refresh()) r = await go();
+    if(!r.ok) throw new Error("No se pudo subir la imagen: " + (await r.text()));
+    return sb.pub(path);
+  },
+  async list(prefix){
+    return sb.req("/storage/v1/object/list/"+BUCKET, {method:"POST", body:{prefix, limit:200, sortBy:{column:"created_at", order:"desc"}}});
+  },
+  async removeFile(path){ return sb.req("/storage/v1/object/"+BUCKET+"/"+path, {method:"DELETE"}); }
+};
+/* redimensiona y convierte: PNG conserva transparencia (logos); el resto va a JPEG/WebP */
+function prepImage(file, {max=1600, png=false, q=.82} = {}){
+  return new Promise((ok, ko) => {
+    const fr = new FileReader(); fr.onerror = ko;
+    fr.onload = () => { const im = new Image(); im.onerror = ko;
+      im.onload = () => {
+        const k = Math.min(1, max / Math.max(im.width, im.height)); const c = document.createElement("canvas");
+        c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        const x = c.getContext("2d"); if(!png){ x.fillStyle = "#fff"; x.fillRect(0,0,c.width,c.height); }
+        x.drawImage(im, 0, 0, c.width, c.height);
+        const type = png ? "image/png" : "image/jpeg";
+        c.toBlob(b => b ? ok({blob:b, type, ext: png ? "png" : "jpg"}) : ko(new Error("img")), type, q);
+      }; im.src = fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+async function uploadFile(file, folder, opts){
+  const p = await prepImage(file, opts);
+  const name = uid() + Date.now().toString(36) + "." + p.ext;
+  return sb.upload(p.blob, folder + "/" + name, p.type);
+}
+
+/* ---------- estado ---------- */
+const STATUS = ["nuevo","confirmado","enviado","entregado","cancelado"];
+const S = {tab:"resumen", sub:{}, ready:false, email:"", d:{orders:[],products:[],variants:[],categories:[],families:[],settings:{},coupons:[],moves:[],pay:{}}, sheet:null, ofilter:{st:"",pay:"",q:""}, busy:false};
+async function loadAll(){
+  const g = p => sb.req("/rest/v1/" + p);
+  const [orders, products, variants, categories, families, st, coupons, moves, pay] = await Promise.all([
+    g("orders?select=*&order=created_at.desc&limit=1000"), g("products?select=*&order=position"), g("product_variants?select=*&order=position"),
+    g("categories?select=*&order=position"), g("families?select=*&order=position"), g("settings?select=key,value"),
+    g("coupons?select=*&order=created_at.desc"), g("stock_movements?select=*&order=created_at.desc&limit=300"), g("payment_config?select=key,value")]);
+  const settings = {}; st.forEach(r => settings[r.key] = r.value);
+  const pc = {}; pay.forEach(r => pc[r.key] = r.value);
+  S.d = {orders, products, variants, categories, families, settings, coupons, moves, pay:pc};
+  S.ready = true;
+}
+const setSetting = (key, value) => sb.req("/rest/v1/settings?on_conflict=key", {method:"POST", body:[{key, value}], prefer:"resolution=merge-duplicates,return=minimal"}).then(() => { S.d.settings[key] = value; });
+const setPay = (key, value) => sb.req("/rest/v1/payment_config?on_conflict=key", {method:"POST", body:[{key, value:String(value ?? ""), updated_at:new Date().toISOString()}], prefer:"resolution=merge-duplicates,return=minimal"}).then(() => { S.d.pay[key] = String(value ?? ""); });
+const sv = k => { const v = S.d.settings[k]; return v == null ? "" : v; };
+const isOn = k => String(sv(k)).replace(/"/g,"") === "1";
+const prodOf = id => S.d.products.find(p => p.id === id);
+const varsOf = id => S.d.variants.filter(v => v.product_id === id);
+const lowAt = () => Math.max(0, parseInt(sv("lowStock")) || 5);
+const isPaid = o => o.payment_status === "pagado";
+const payPill = o => o.payment_status === "pagado" ? '<span class="pill ok">Pagado</span>' : ["declined","error","voided"].includes(o.payment_status) ? '<span class="pill bad">'+esc(o.payment_status === "declined" ? "Rechazado" : o.payment_status === "voided" ? "Anulado" : "Error")+'</span>' : '<span class="pill warn">Pendiente</span>';
+const stPill = s => `<span class="pill ${s === "cancelado" ? "bad" : s === "nuevo" ? "warn" : s === "entregado" ? "ok" : "mu"}">${esc(s)}</span>`;
+const ICON = {
+  resumen:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  pedidos:'<svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 016 0v2"/></svg>',
+  inventario:'<svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>',
+  catalogo:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+  promos:'<svg viewBox="0 0 24 24"><path d="M20 12l-8 8-9-9V3h8l9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>',
+  marca:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 9"/></svg>',
+  pagos:'<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>',
+  sistema:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3h0a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5h0a1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8v0a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>'
+};
+const TABS = [["resumen","Resumen"],["pedidos","Pedidos"],["inventario","Inventario"],["catalogo","Catálogo"],["promos","Promociones"],["marca","Marca y medios"],["pagos","Pagos"],["sistema","Sistema"]];
+
+function csv(rows){ return rows.map(r => r.map(c => { c = String(c ?? ""); return /[",\n;]/.test(c) ? '"' + c.replace(/"/g,'""') + '"' : c; }).join(",")).join("\n"); }
+function download(name, text, type="text/csv"){ const b = new Blob(["﻿"+text], {type:type+";charset=utf-8"}); const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = name; a.click(); setTimeout(()=>URL.revokeObjectURL(u), 2000); }
+
+/* ---------- vistas ---------- */
+function shell(inner){
+  const nNew = S.d.orders.filter(o => o.status === "nuevo").length;
+  return `<div class="shell"><aside class="side" aria-label="Módulos">
+    <div class="brand"><div><b>SERENIA</b><small>Panel desarrollador</small></div></div>
+    ${TABS.map(t => `<button class="nav" data-act="tab" data-id="${t[0]}" ${S.tab === t[0] ? 'aria-current="page"' : ""}>${ICON[t[0] === "promos" ? "promos" : t[0]]}<span>${t[1]}</span>${t[0] === "pedidos" && nNew ? `<span class="bd">${nNew}</span>` : ""}</button>`).join("")}
+    <div class="sp"></div>
+    <a class="nav" href="index.html" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg><span>Ver tienda</span></a>
+    <button class="nav" data-act="logout"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg><span>Salir</span></button>
+  </aside><main class="main">${inner}</main></div>`;
+}
+const head = (t, sub, actions="") => `<div class="top"><div><h1>${t}</h1>${sub ? `<div class="sub">${sub}</div>` : ""}</div><div class="row">${actions}</div></div>`;
+
+/* Resumen */
+function vResumen(){
+  const O = S.d.orders, paid = O.filter(isPaid);
+  const now = new Date(), today = dayKey(now), m0 = new Date(now.getFullYear(), now.getMonth(), 1);
+  const d7 = new Date(now.getTime() - 6*864e5); d7.setHours(0,0,0,0);
+  const sum = a => a.reduce((s,o) => s + o.total, 0);
+  const vToday = sum(paid.filter(o => dayKey(o.paid_at || o.created_at) === today));
+  const v7 = sum(paid.filter(o => new Date(o.paid_at || o.created_at) >= d7));
+  const vM = sum(paid.filter(o => new Date(o.paid_at || o.created_at) >= m0));
+  const pend = O.filter(o => o.status === "nuevo");
+  const avg = paid.length ? sum(paid) / paid.length : 0;
+  const low = S.d.variants.filter(v => v.stock != null && v.stock <= lowAt());
+  // serie 14 días
+  const days = []; for(let i = 13; i >= 0; i--){ const d = new Date(now.getTime() - i*864e5); days.push({k:dayKey(d), d, v:0}); }
+  paid.forEach(o => { const k = dayKey(o.paid_at || o.created_at); const x = days.find(z => z.k === k); if(x) x.v += o.total; });
+  const top = {}; paid.forEach(o => (o.items || []).forEach(l => { top[l.producto] = (top[l.producto] || 0) + (l.cantidad || 0); }));
+  const topL = Object.entries(top).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const checks = [
+    ["Panel y base de datos conectados", true],
+    ["Pagos en línea (Wompi) configurados", !!(S.d.pay.public_key && S.d.pay.integrity_secret && S.d.pay.events_secret)],
+    ["Pago en línea activado en la tienda", isOn("payOnline")],
+    ["WhatsApp real configurado", String(sv("whatsapp")).replace(/"/g,"") !== "573000000000" && !!sv("whatsapp")],
+    ["Logo propio cargado", !!sv("logoUrl")],
+    ["Productos con foto en Supabase", S.d.products.length > 0 && S.d.products.every(p => (p.images || []).length)],
+    ["Inventario cargado (al menos una medida con stock)", S.d.variants.some(v => v.stock != null)]
+  ];
+  return head("Resumen", "Así va la tienda hoy") + `
+  <div class="grid g4">
+    <div class="card kpi"><span class="l">Ventas hoy</span><span class="v">${cop(vToday)}</span><span class="s">pagos confirmados</span></div>
+    <div class="card kpi"><span class="l">Últimos 7 días</span><span class="v">${cop(v7)}</span><span class="s">${paid.filter(o => new Date(o.paid_at || o.created_at) >= d7).length} pedidos</span></div>
+    <div class="card kpi"><span class="l">Este mes</span><span class="v">${cop(vM)}</span><span class="s">ticket promedio ${cop(avg)}</span></div>
+    <div class="card kpi"><span class="l">Por atender</span><span class="v">${pend.length}</span><span class="s">pedidos nuevos · ${low.length} medidas con stock bajo</span></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><div class="row sb" style="margin-bottom:8px"><h3>Ventas de los últimos 14 días</h3><span class="note">COP · pagos confirmados</span></div>${chart(days)}
+      <details style="margin-top:8px"><summary class="note" style="cursor:pointer">Ver como tabla</summary><div class="tw" style="margin-top:8px"><table><thead><tr><th>Día</th><th class="n">Ventas</th></tr></thead><tbody>${days.map(x => `<tr><td>${x.d.toLocaleDateString("es-CO",{weekday:"short",day:"2-digit",month:"short"})}</td><td class="n">${cop(x.v)}</td></tr>`).join("")}</tbody></table></div></details></div>
+    <div class="card"><h3 style="margin-bottom:10px">Puesta en marcha</h3><div class="grid" style="gap:8px">${checks.map(c => `<div class="row" style="gap:8px;align-items:flex-start"><span class="pill ${c[1] ? "ok" : "warn"}" style="flex:none">${c[1] ? "Listo" : "Falta"}</span><span style="flex:1;min-width:0">${c[0]}</span></div>`).join("")}</div></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3 style="margin-bottom:8px">Pedidos recientes</h3>${O.length ? `<div class="tw"><table><tbody>${O.slice(0,6).map(o => `<tr class="click" data-act="order" data-id="${o.id}"><td>${esc(o.reference || "—")}</td><td>${esc(o.buyer_name)}</td><td class="n">${cop(o.total)}</td><td>${payPill(o)}</td></tr>`).join("")}</tbody></table></div>` : '<p class="empty">Aún no hay pedidos.</p>'}</div>
+    <div class="card"><h3 style="margin-bottom:8px">Más vendidos y alertas</h3>
+      ${topL.length ? topL.map(t => `<div class="row sb"><span>${esc(t[0])}</span><b>${t[1]} uds</b></div>`).join("") : '<p class="note">Cuando haya ventas pagadas verás aquí el ranking.</p>'}
+      ${low.length ? `<hr style="border:0;border-top:1px solid var(--line);margin:12px 0"><div class="note" style="margin-bottom:6px">Stock bajo (≤ ${lowAt()})</div>${low.slice(0,6).map(v => `<div class="row sb"><span>${esc((prodOf(v.product_id) || {}).name || v.product_id)} · ${esc(v.label)}</span><span class="pill ${v.stock === 0 ? "bad" : "warn"}">${v.stock}</span></div>`).join("")}` : ""}</div>
+  </div>`;
+}
+function chart(days){
+  const W = 640, H = 220, L = 52, B = 26, T = 10, R = 8, iw = W-L-R, ih = H-T-B;
+  const max = Math.max(1, ...days.map(d => d.v)); const nice = (() => { const p = Math.pow(10, Math.floor(Math.log10(max))); const m = max / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; })();
+  const bw = iw / days.length, gap = 6;
+  let g = ""; for(let i = 0; i <= 4; i++){ const y = T + ih - ih * i/4, v = nice * i/4;
+    g += `<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${y+4}" text-anchor="end">${v >= 1e6 ? (v/1e6).toFixed(1)+"M" : v >= 1e3 ? Math.round(v/1e3)+"k" : Math.round(v)}</text>`; }
+  const bars = days.map((d, i) => { const h = Math.max(d.v ? 3 : 0, ih * d.v / nice), x = L + i*bw + gap/2, y = T + ih - h;
+    const lbl = d.d.toLocaleDateString("es-CO", {weekday:"long", day:"numeric", month:"short"});
+    return `<rect x="${x}" y="${y}" width="${bw-gap}" height="${h}" rx="3" fill="var(--salvia)" class="bar-m" data-tip="${esc(lbl)}: ${cop(d.v)}"/>
+      <rect x="${L+i*bw}" y="${T}" width="${bw}" height="${ih}" fill="transparent" data-tip="${esc(lbl)}: ${cop(d.v)}"/>
+      ${i % 2 === 0 || days.length < 8 ? `<text x="${x+(bw-gap)/2}" y="${H-8}" text-anchor="middle">${d.d.getDate()}</text>` : ""}`; }).join("");
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Ventas diarias de los últimos 14 días">${g}${bars}</svg>`;
+}
+/* Pedidos */
+function filteredOrders(){
+  const f = S.ofilter, q = f.q.trim().toLowerCase();
+  return S.d.orders.filter(o => (!f.st || o.status === f.st) && (!f.pay || (f.pay === "pagado" ? isPaid(o) : !isPaid(o))) &&
+    (!q || [o.reference, o.buyer_name, o.buyer_phone, o.buyer_email, o.buyer_city].join(" ").toLowerCase().includes(q)));
+}
+function vPedidos(){
+  const L = filteredOrders(), f = S.ofilter;
+  return head("Pedidos", `${S.d.orders.length} pedidos · ${S.d.orders.filter(isPaid).length} pagados`, `<button class="btn alt sm" data-act="exp-orders">Exportar CSV</button><button class="btn alt sm" data-act="reload">Actualizar</button>`) + `
+  <div class="card" style="margin-bottom:14px"><div class="f2">
+    <div class="fld"><label for="of-q">Buscar</label><input id="of-q" data-of="q" value="${esc(f.q)}" placeholder="Referencia, cliente, teléfono…"></div>
+    <div class="fld"><label for="of-st">Estado</label><select id="of-st" data-of="st"><option value="">Todos</option>${STATUS.map(s => `<option ${f.st === s ? "selected" : ""}>${s}</option>`).join("")}</select></div>
+    <div class="fld"><label for="of-pay">Pago</label><select id="of-pay" data-of="pay"><option value="">Todos</option><option value="pagado" ${f.pay === "pagado" ? "selected" : ""}>Pagados</option><option value="pend" ${f.pay === "pend" ? "selected" : ""}>Sin pagar</option></select></div></div></div>
+  ${L.length ? `<div class="tw"><table><thead><tr><th>Fecha</th><th>Referencia</th><th>Cliente</th><th>Ciudad</th><th class="n">Total</th><th>Método</th><th>Pago</th><th>Estado</th></tr></thead><tbody>
+    ${L.map(o => `<tr class="click" data-act="order" data-id="${o.id}"><td>${fdate(o.created_at)}</td><td><b>${esc(o.reference || "—")}</b></td><td>${esc(o.buyer_name)}</td><td>${esc(o.buyer_city)}</td><td class="n">${cop(o.total)}</td><td>${o.payment_method === "wompi" ? "Wompi" : "WhatsApp"}</td><td>${payPill(o)}</td><td>${stPill(o.status)}</td></tr>`).join("")}</tbody></table></div>` : '<div class="card empty">No hay pedidos con esos filtros.</div>'}`;
+}
+function sheetOrder(){
+  const o = S.d.orders.find(x => x.id === S.sheet.id); if(!o) return "";
+  const phone = String(o.buyer_phone || "").replace(/\D/g, ""); const wa = phone ? "https://wa.me/" + (phone.length === 10 ? "57" + phone : phone) + "?text=" + encodeURIComponent(`Hola ${o.buyer_name}, te escribimos de SERENIA por tu pedido ${o.reference || ""}.`) : "";
+  return `<div class="row sb"><div><h2>Pedido ${esc(o.reference || "")}</h2><div class="note">${fdate(o.created_at)} · ${o.payment_method === "wompi" ? "Pago en línea (Wompi)" : "Pedido por WhatsApp"}</div></div><button class="btn alt sm" data-act="close">Cerrar</button></div>
+  <div class="row">${payPill(o)}${stPill(o.status)}${o.stock_applied ? '<span class="pill mu">Stock descontado</span>' : ""}</div>
+  <div class="card"><h3 style="margin-bottom:8px">Cliente</h3><dl class="kv"><dt>Nombre</dt><dd>${esc(o.buyer_name)}</dd><dt>Celular</dt><dd>${esc(o.buyer_phone || "—")}</dd><dt>Correo</dt><dd>${esc(o.buyer_email || "—")}</dd><dt>Ciudad</dt><dd>${esc(o.buyer_city || "—")}</dd><dt>Dirección</dt><dd>${esc(o.buyer_address || "—")}</dd></dl></div>
+  <div class="card"><h3 style="margin-bottom:8px">Productos</h3><div class="tw"><table><tbody>${(o.items || []).map(l => `<tr><td>${esc(l.producto)}<div class="note">${esc(l.medida)}</div></td><td class="n">${l.cantidad} × ${cop(l.precio)}</td><td class="n">${cop(l.cantidad * l.precio)}</td></tr>`).join("")}</tbody></table></div>
+    <dl class="kv" style="margin-top:10px"><dt>Subtotal</dt><dd>${cop(o.subtotal || o.total)}</dd>${o.discount ? `<dt>Descuento</dt><dd>− ${cop(o.discount)} ${o.coupon ? "(" + esc(o.coupon) + ")" : ""}</dd>` : ""}${o.shipping ? `<dt>Envío</dt><dd>${cop(o.shipping)}</dd>` : ""}<dt><b>Total</b></dt><dd><b>${cop(o.total)}</b></dd>${o.wompi_tx_id ? `<dt>Transacción</dt><dd>${esc(o.wompi_tx_id)}</dd>` : ""}</dl></div>
+  <div class="card"><div class="fld"><label for="o-st">Estado del pedido</label><select id="o-st" data-ostate="${o.id}">${STATUS.map(s => `<option ${o.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></div>
+    <div class="fld" style="margin-top:10px"><label for="o-notes">Notas internas</label><textarea id="o-notes" data-onotes="${o.id}">${esc(o.notes)}</textarea></div></div>
+  <div class="row">${!isPaid(o) ? `<button class="btn gold" data-act="o-confirm" data-id="${o.id}">Confirmar pago y descontar stock</button>` : ""}${o.stock_applied && o.status !== "cancelado" ? `<button class="btn danger" data-act="o-cancel" data-id="${o.id}">Cancelar y devolver stock</button>` : ""}${wa ? `<a class="btn alt" href="${wa}" target="_blank" rel="noopener">Escribir por WhatsApp</a>` : ""}</div>`;
+}
+
+/* Inventario */
+function stockPill(v){
+  if(v.stock == null) return '<span class="pill mu">Sin control</span>';
+  if(v.stock === 0) return '<span class="pill bad">Agotado</span>';
+  if(v.stock <= lowAt()) return '<span class="pill warn">Bajo</span>';
+  return '<span class="pill ok">Disponible</span>';
+}
+function vInventario(){
+  const t = S.sub.inv || "stock", V = S.d.variants;
+  const tabs = `<div class="tabs" role="tablist">${[["stock","Existencias"],["mov","Movimientos"]].map(x => `<button role="tab" data-act="sub" data-k="inv" data-id="${x[0]}" aria-selected="${t === x[0]}">${x[1]}</button>`).join("")}</div>`;
+  const units = V.reduce((s, v) => s + (v.stock || 0), 0), value = V.reduce((s, v) => s + (v.stock || 0) * v.price, 0);
+  let body = "";
+  if(t === "stock"){
+    body = `<div class="grid g4" style="margin-bottom:14px"><div class="card kpi"><span class="l">Unidades en stock</span><span class="v">${units}</span></div><div class="card kpi"><span class="l">Valor a precio de venta</span><span class="v">${cop(value)}</span></div><div class="card kpi"><span class="l">Agotadas</span><span class="v">${V.filter(v => v.stock === 0).length}</span></div>
+      <div class="card"><div class="fld"><label for="low">Aviso de stock bajo desde</label><input id="low" type="number" min="0" data-setting="lowStock" value="${lowAt()}"></div></div></div>
+    <div class="tw"><table><thead><tr><th>Producto</th><th>Medida</th><th class="n">Precio</th><th class="n">Stock</th><th>Estado</th><th></th></tr></thead><tbody>
+    ${V.map(v => { const p = prodOf(v.product_id) || {name:v.product_id}; return `<tr><td>${esc(p.name)}</td><td>${esc(v.label)}</td><td class="n">${cop(v.price)}</td><td class="n"><b>${v.stock == null ? "∞" : v.stock}</b></td><td>${stockPill(v)}</td><td class="n"><button class="btn alt sm" data-act="stock" data-id="${esc(v.id)}">Ajustar</button></td></tr>`; }).join("")}</tbody></table></div>
+    <p class="note" style="margin-top:8px">“Sin control” = unidades ilimitadas (no se descuenta). Al ajustar una medida por primera vez, queda con control de stock. Los pedidos pagados descuentan solos.</p>`;
+  } else {
+    body = S.d.moves.length ? `<div class="tw"><table><thead><tr><th>Fecha</th><th>Producto</th><th>Medida</th><th>Tipo</th><th class="n">Cambio</th><th>Nota</th></tr></thead><tbody>${S.d.moves.map(m => { const v = V.find(x => x.id === m.variant_id) || {}; const p = prodOf(m.product_id) || {name:m.product_id};
+      return `<tr><td>${fdate(m.created_at)}</td><td>${esc(p.name)}</td><td>${esc(v.label || m.variant_id)}</td><td>${esc(m.kind)}</td><td class="n"><b style="color:${m.delta < 0 ? "var(--danger)" : "var(--ok)"}">${m.delta > 0 ? "+" : ""}${m.delta}</b></td><td>${esc(m.note)}</td></tr>`; }).join("")}</tbody></table></div>` : '<div class="card empty">Sin movimientos todavía.</div>';
+  }
+  return head("Inventario", "Existencias por medida, entradas, ajustes y bitácora", `<button class="btn alt sm" data-act="exp-stock">Exportar CSV</button>`) + tabs + body;
+}
+function sheetStock(){
+  const v = S.d.variants.find(x => x.id === S.sheet.id); if(!v) return ""; const p = prodOf(v.product_id) || {name:""};
+  const dr = S.sheet.draft;
+  return `<div class="row sb"><div><h2>Ajustar stock</h2><div class="note">${esc(p.name)} · ${esc(v.label)}</div></div><button class="btn alt sm" data-act="close">Cerrar</button></div>
+  <div class="card"><div class="kv"><dt>Stock actual</dt><dd><b>${v.stock == null ? "Sin control (ilimitado)" : v.stock}</b></dd></div></div>
+  <div class="card"><div class="f2"><div class="fld"><label for="s-kind">Tipo</label><select id="s-kind" data-sd="kind"><option value="entrada" ${dr.kind === "entrada" ? "selected" : ""}>Entrada (producción / compra)</option><option value="ajuste" ${dr.kind === "ajuste" ? "selected" : ""}>Ajuste (conteo)</option><option value="devolucion" ${dr.kind === "devolucion" ? "selected" : ""}>Devolución</option></select></div>
+    <div class="fld"><label for="s-d">Cantidad (+ suma, − resta)</label><input id="s-d" type="number" data-sd="delta" value="${esc(dr.delta)}"></div></div>
+    <div class="fld" style="margin-top:10px"><label for="s-n">Nota</label><input id="s-n" data-sd="note" value="${esc(dr.note)}" placeholder="Ej. Lote de octubre"></div></div>
+  <div class="row"><button class="btn gold" data-act="stock-save">Guardar ajuste</button>${v.stock != null ? `<button class="btn danger" data-act="stock-unl">Quitar control (ilimitado)</button>` : ""}</div>`;
+}
+
+/* Catálogo */
+function vCatalogo(){
+  const t = S.sub.cat || "prod";
+  const tabs = `<div class="tabs" role="tablist">${[["prod","Productos"],["tipos","Tipos de producto"],["aromas","Aromas"]].map(x => `<button role="tab" data-act="sub" data-k="cat" data-id="${x[0]}" aria-selected="${t === x[0]}">${x[1]}</button>`).join("")}</div>`;
+  let body = "";
+  if(t === "prod"){
+    body = `<div class="tw"><table><thead><tr><th></th><th>Producto</th><th>Tipo</th><th>Aroma</th><th class="n">Desde</th><th>Visible</th><th>Destacado</th><th></th></tr></thead><tbody>
+    ${S.d.products.map(p => { const vs = varsOf(p.id), img = (p.images || [])[0];
+      return `<tr><td>${img ? `<img class="thumb" src="${esc(img)}" alt="">` : '<div class="thumb"></div>'}</td><td><b>${esc(p.name)}</b></td><td>${esc((S.d.categories.find(c => c.id === p.category_id) || {}).name || "—")}</td><td>${esc((S.d.families.find(c => c.id === p.family_id) || {}).name || "—")}</td><td class="n">${vs.length ? cop(Math.min(...vs.map(v => v.price))) : "—"}</td>
+      <td><input type="checkbox" data-tog="active" data-id="${esc(p.id)}" ${p.active ? "checked" : ""} aria-label="Visible"></td><td><input type="checkbox" data-tog="featured" data-id="${esc(p.id)}" ${p.featured ? "checked" : ""} aria-label="Destacado"></td>
+      <td class="n"><button class="btn alt sm" data-act="pedit" data-id="${esc(p.id)}">Editar</button></td></tr>`; }).join("")}</tbody></table></div>`;
+  } else {
+    const key = t === "tipos" ? "categories" : "families", L = S.d[key];
+    body = `<div class="card"><p class="note" style="margin-bottom:10px">${t === "tipos" ? "Los tipos aparecen en el menú, el inicio y como filtro. La foto se usa en el círculo del inicio." : "Familias de aroma: filtro y franja de color en la tienda."}</p>
+    <div class="grid">${L.map((c, i) => `<div class="row" style="flex-wrap:nowrap">${key === "categories" ? `<label class="up" style="width:64px;aspect-ratio:1;flex:none;padding:0;overflow:hidden">${c.image ? `<img src="${esc(c.image)}" alt="" style="width:100%;height:100%;object-fit:cover">` : "Foto"}<input class="sr" type="file" accept="image/*" data-lup="${i}"></label>` : `<input type="color" data-lcolor="${i}" value="${esc(c.color || "#c9b5a0")}" aria-label="Color" style="width:48px;height:38px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">`}
+      <input class="cell-in" data-lname="${key}" data-i="${i}" value="${esc(c.name)}" aria-label="Nombre">
+      <button class="btn alt sm" data-act="lmove" data-k="${key}" data-i="${i}" aria-label="Subir">↑</button><button class="btn danger sm" data-act="ldel" data-k="${key}" data-i="${i}">Quitar</button></div>`).join("")}</div>
+    <div class="row" style="margin-top:12px"><button class="btn alt sm" data-act="ladd" data-k="${key}">+ Agregar</button><button class="btn" data-act="lsave" data-k="${key}">Guardar cambios</button></div></div>`;
+  }
+  return head("Catálogo", `${S.d.products.length} productos · ${S.d.variants.length} medidas`, t === "prod" ? `<button class="btn gold" data-act="pnew">+ Nuevo producto</button>` : "") + tabs + body;
+}
+function sheetProduct(){
+  const d = S.sheet.draft;
+  return `<div class="row sb"><h2>${S.sheet.isNew ? "Nuevo producto" : "Editar producto"}</h2><button class="btn alt sm" data-act="close">Cerrar</button></div>
+  <div class="card"><div class="f2">
+    <div class="fld"><label for="p-name">Nombre</label><input id="p-name" data-pd="name" value="${esc(d.name)}"></div>
+    <div class="fld"><label for="p-cat">Tipo</label><select id="p-cat" data-pd="category_id"><option value="">—</option>${S.d.categories.map(c => `<option value="${esc(c.id)}" ${d.category_id === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
+    <div class="fld"><label for="p-fam">Aroma (familia)</label><select id="p-fam" data-pd="family_id"><option value="">—</option>${S.d.families.map(c => `<option value="${esc(c.id)}" ${d.family_id === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
+    <div class="fld"><label for="p-aroma">Nombre del aroma</label><input id="p-aroma" data-pd="aroma" value="${esc(d.aroma)}"></div>
+    <div class="fld"><label for="p-cn">Color (nombre)</label><input id="p-cn" data-pd="color_name" value="${esc(d.color_name)}"></div>
+    <div class="fld"><label for="p-col">Color de respaldo</label><input id="p-col" type="color" data-pd="color" value="${esc(d.color || "#c9b5a0")}"></div></div>
+    <div class="fld" style="margin-top:12px"><label for="p-desc">Descripción</label><textarea id="p-desc" data-pd="description">${esc(d.description)}</textarea></div>
+    <div class="fld" style="margin-top:12px"><label for="p-tri">Triángulo olfativo</label><input id="p-tri" data-pd="triangle" value="${esc(d.triangle)}"></div>
+    <div class="row" style="margin-top:12px;gap:20px"><label class="chk"><input type="checkbox" data-pd="active" ${d.active ? "checked" : ""}> Visible en la tienda</label><label class="chk"><input type="checkbox" data-pd="featured" ${d.featured ? "checked" : ""}> Destacado</label></div></div>
+  <div class="card"><h3 style="margin-bottom:8px">Fotos <span class="note">(la primera es la principal)</span></h3><div class="ims">
+    ${d.images.map((im, i) => `<div class="im"><img src="${esc(im)}" alt="">${i === 0 ? '<span class="t">Principal</span>' : ""}<button class="x" data-act="pimg-del" data-i="${i}" aria-label="Quitar foto">×</button>${i > 0 ? `<button class="x" style="right:34px" data-act="pimg-first" data-i="${i}" aria-label="Hacer principal" title="Hacer principal">★</button>` : ""}</div>`).join("")}
+    <label class="up">+ Subir fotos<input class="sr" type="file" accept="image/*" multiple data-pup="1"></label></div>
+    <p class="note" style="margin-top:8px">Se suben a Supabase Storage y se optimizan automáticamente.</p></div>
+  <div class="card"><h3 style="margin-bottom:8px">Medidas, precios y stock</h3><div class="tw"><table><thead><tr><th>Medida</th><th>Peso (g)</th><th>Precio</th><th>Stock</th><th></th></tr></thead><tbody>
+    ${d.variants.map((v, i) => `<tr><td><input class="cell-in" data-vd="${i}" data-k="label" value="${esc(v.label)}"></td><td><input class="cell-in" style="width:90px" type="number" min="0" data-vd="${i}" data-k="weight_g" value="${esc(v.weight_g ?? "")}"></td><td><input class="cell-in" style="width:120px" type="number" min="0" step="100" data-vd="${i}" data-k="price" value="${esc(v.price)}"></td><td><input class="cell-in" style="width:90px" type="number" min="0" data-vd="${i}" data-k="stock" value="${esc(v.stock ?? "")}" placeholder="∞"></td><td><button class="btn danger sm" data-act="pvar-del" data-i="${i}">Quitar</button></td></tr>`).join("")}</tbody></table></div>
+    <button class="btn alt sm" style="margin-top:10px" data-act="pvar-add">+ Agregar medida</button></div>
+  <div class="row"><button class="btn gold" data-act="psave">Guardar producto</button>${S.sheet.isNew ? "" : `<button class="btn danger" data-act="pdel">Eliminar producto</button>`}</div>`;
+}
+/* Promociones */
+const bannersList = () => { const b = sv("banners"); return Array.isArray(b) ? b : []; };
+function vPromos(){
+  const t = S.sub.promo || "cupones";
+  const tabs = `<div class="tabs" role="tablist">${[["cupones","Cupones"],["banners","Banners"],["barra","Barra superior y envíos"]].map(x => `<button role="tab" data-act="sub" data-k="promo" data-id="${x[0]}" aria-selected="${t === x[0]}">${x[1]}</button>`).join("")}</div>`;
+  let body = "", act = "";
+  if(t === "cupones"){
+    act = `<button class="btn gold" data-act="cnew">+ Nuevo cupón</button>`;
+    body = S.d.coupons.length ? `<div class="tw"><table><thead><tr><th>Código</th><th>Descuento</th><th class="n">Compra mínima</th><th>Vigencia</th><th class="n">Usos</th><th>Estado</th><th></th></tr></thead><tbody>
+      ${S.d.coupons.map(c => { const exp = c.ends_at && new Date(c.ends_at) < new Date(); return `<tr><td><b>${esc(c.code)}</b><div class="note">${esc(c.note)}</div></td><td>${c.kind === "percent" ? c.value + "%" : cop(c.value)}</td><td class="n">${cop(c.min_total)}</td><td>${c.starts_at ? fdate(c.starts_at).split(",")[0] : "ya"} → ${c.ends_at ? fdate(c.ends_at).split(",")[0] : "sin fin"}</td><td class="n">${c.uses}${c.max_uses ? " / " + c.max_uses : ""}</td><td>${!c.active ? '<span class="pill mu">Pausado</span>' : exp ? '<span class="pill bad">Vencido</span>' : '<span class="pill ok">Activo</span>'}</td><td class="n"><button class="btn alt sm" data-act="cedit" data-id="${esc(c.code)}">Editar</button></td></tr>`; }).join("")}</tbody></table></div>`
+      : '<div class="card empty">Crea tu primer cupón (por ejemplo BIENVENIDA10 con 10 % de descuento). El cliente lo escribe en el carrito y el precio se valida en el servidor.</div>';
+  } else if(t === "banners"){
+    act = `<button class="btn gold" data-act="bnew">+ Nuevo banner</button>`;
+    const B = bannersList();
+    body = B.length ? `<div class="grid g2">${B.map((b, i) => `<div class="card"><div style="aspect-ratio:16/7;border-radius:10px;overflow:hidden;background:var(--surface2);border:1px solid var(--line)">${b.img ? `<img src="${esc(b.img)}" alt="" style="width:100%;height:100%;object-fit:cover">` : ""}</div>
+      <div class="row sb" style="margin-top:10px"><div><b>${esc(b.title || "Sin título")}</b><div class="note">${esc(b.sub || "")}</div></div>${b.active === false ? '<span class="pill mu">Oculto</span>' : '<span class="pill ok">Visible</span>'}</div>
+      <div class="row" style="margin-top:10px"><button class="btn alt sm" data-act="bedit" data-i="${i}">Editar</button><button class="btn alt sm" data-act="bmove" data-i="${i}">↑</button><button class="btn danger sm" data-act="bdel" data-i="${i}">Quitar</button></div></div>`).join("")}</div>`
+      : '<div class="card empty">Aún no hay banners. Los banners aparecen como tarjetas de promoción debajo del encabezado de la tienda (ej. “20 % en Día de la Madre”).</div>';
+  } else {
+    body = settingsForm("promoBar", [["announcement","Texto de la barra superior","text"],["freeShipping","Envío gratis desde (COP)","number"],["shippingFee","Costo de envío cuando no aplica el gratis (COP, 0 = no cobrar)","number"],["heroLink","Al tocar el banner principal ir a (ej. /velas)","text"]]);
+  }
+  return head("Promociones", "Cupones, banners y envíos", act) + tabs + body;
+}
+function settingsForm(id, defs, extra = ""){
+  return `<div class="card"><div class="f2">${defs.map(([k, l, ty]) => {
+    if(ty === "area") return `<div class="fld" style="grid-column:1/-1"><label for="sk-${k}">${l}</label><textarea id="sk-${k}" data-sk="${k}">${esc(sv(k))}</textarea></div>`;
+    return `<div class="fld"><label for="sk-${k}">${l}</label><input id="sk-${k}" data-sk="${k}" type="${ty || "text"}" value="${esc(sv(k))}"></div>`; }).join("")}</div>
+    ${extra}<div class="row" style="margin-top:14px"><button class="btn" data-act="sk-save" data-keys="${defs.map(d => d[0]).join(",")}">Guardar cambios</button></div></div>`;
+}
+function sheetCoupon(){
+  const d = S.sheet.draft;
+  return `<div class="row sb"><h2>${S.sheet.isNew ? "Nuevo cupón" : "Editar cupón"}</h2><button class="btn alt sm" data-act="close">Cerrar</button></div>
+  <div class="card"><div class="f2">
+    <div class="fld"><label for="c-code">Código</label><input id="c-code" data-cd="code" value="${esc(d.code)}" ${S.sheet.isNew ? "" : "disabled"} placeholder="BIENVENIDA10" style="text-transform:uppercase"></div>
+    <div class="fld"><label for="c-kind">Tipo</label><select id="c-kind" data-cd="kind"><option value="percent" ${d.kind === "percent" ? "selected" : ""}>Porcentaje (%)</option><option value="fixed" ${d.kind === "fixed" ? "selected" : ""}>Valor fijo (COP)</option></select></div>
+    <div class="fld"><label for="c-val">Valor</label><input id="c-val" type="number" min="1" data-cd="value" value="${esc(d.value)}"></div>
+    <div class="fld"><label for="c-min">Compra mínima (COP)</label><input id="c-min" type="number" min="0" data-cd="min_total" value="${esc(d.min_total)}"></div>
+    <div class="fld"><label for="c-from">Desde</label><input id="c-from" type="date" data-cd="starts_at" value="${esc(d.starts_at || "")}"></div>
+    <div class="fld"><label for="c-to">Hasta</label><input id="c-to" type="date" data-cd="ends_at" value="${esc(d.ends_at || "")}"></div>
+    <div class="fld"><label for="c-max">Usos máximos (vacío = ilimitado)</label><input id="c-max" type="number" min="1" data-cd="max_uses" value="${esc(d.max_uses ?? "")}"></div>
+    <div class="fld"><label for="c-note">Nota interna</label><input id="c-note" data-cd="note" value="${esc(d.note)}"></div></div>
+    <label class="chk" style="margin-top:12px"><input type="checkbox" data-cd="active" ${d.active ? "checked" : ""}> Cupón activo</label></div>
+  <div class="row"><button class="btn gold" data-act="csave">Guardar cupón</button>${S.sheet.isNew ? "" : `<button class="btn danger" data-act="cdel">Eliminar</button>`}</div>`;
+}
+function sheetBanner(){
+  const d = S.sheet.draft;
+  return `<div class="row sb"><h2>${S.sheet.isNew ? "Nuevo banner" : "Editar banner"}</h2><button class="btn alt sm" data-act="close">Cerrar</button></div>
+  <div class="card"><div class="fld"><span class="l">Imagen (recomendada 1600×700)</span><div class="ims" style="grid-template-columns:minmax(160px,260px)">${d.img ? `<div class="im" style="aspect-ratio:16/7"><img src="${esc(d.img)}" alt=""><button class="x" data-act="bimg-del" aria-label="Quitar">×</button></div>` : `<label class="up" style="aspect-ratio:16/7">+ Subir imagen<input class="sr" type="file" accept="image/*" data-bup="1"></label>`}</div></div>
+   <div class="f2" style="margin-top:12px"><div class="fld"><label for="b-t">Título</label><input id="b-t" data-bd="title" value="${esc(d.title)}"></div><div class="fld"><label for="b-s">Subtítulo</label><input id="b-s" data-bd="sub" value="${esc(d.sub)}"></div>
+   <div class="fld"><label for="b-l">Al tocar ir a (ej. /velas o /aroma/florales)</label><input id="b-l" data-bd="link" value="${esc(d.link)}"></div><div class="fld"><label for="b-cta">Texto del botón</label><input id="b-cta" data-bd="cta" value="${esc(d.cta)}" placeholder="Ver ahora"></div>
+   <div class="fld"><label for="b-f">Desde</label><input id="b-f" type="date" data-bd="from" value="${esc(d.from || "")}"></div><div class="fld"><label for="b-to">Hasta</label><input id="b-to" type="date" data-bd="to" value="${esc(d.to || "")}"></div></div>
+   <label class="chk" style="margin-top:12px"><input type="checkbox" data-bd="active" ${d.active !== false ? "checked" : ""}> Visible en la tienda</label></div>
+  <div class="row"><button class="btn gold" data-act="bsave">Guardar banner</button></div>`;
+}
+
+/* Marca y medios */
+function imgSlot(key, label, hint, opts = ""){
+  const url = sv(key);
+  return `<div class="card"><h3>${label}</h3><p class="note" style="margin:4px 0 10px">${hint}</p>
+   <div class="ims" style="grid-template-columns:minmax(120px,220px)">${url ? `<div class="im" style="background:repeating-conic-gradient(#0000000d 0 25%,transparent 0 50%) 50%/16px 16px"><img src="${esc(url)}" alt="" style="object-fit:contain"><button class="x" data-act="slot-del" data-key="${key}" aria-label="Quitar">×</button></div>` : `<label class="up">+ Subir<input class="sr" type="file" accept="image/*" data-slot="${key}" data-opts="${opts}"></label>`}</div>
+   ${url ? `<label class="up" style="margin-top:10px;aspect-ratio:auto;padding:8px">Reemplazar<input class="sr" type="file" accept="image/*" data-slot="${key}" data-opts="${opts}"></label>` : ""}</div>`;
+}
+function vMarca(){
+  const t = S.sub.marca || "ident";
+  const tabs = `<div class="tabs" role="tablist">${[["ident","Identidad"],["textos","Textos de la portada"],["contacto","Contacto y redes"],["lib","Biblioteca de imágenes"]].map(x => `<button role="tab" data-act="sub" data-k="marca" data-id="${x[0]}" aria-selected="${t === x[0]}">${x[1]}</button>`).join("")}</div>`;
+  let body = "";
+  if(t === "ident"){
+    body = `<div class="grid g2">${imgSlot("logoUrl", "Logo", "PNG con fondo transparente. Se muestra en el inicio, en Nosotros y en el encabezado.", "logo")}${imgSlot("heroImage", "Imagen del banner principal", "Opcional. Si la subes reemplaza el diseño con logo en el inicio.", "hero")}</div>
+    ${settingsForm("brand", [["brand","Nombre de la marca","text"],["tagline","Eslogan","text"]])}`;
+  } else if(t === "textos"){
+    body = settingsForm("textos", [["quote","Frase del inicio (separa las líneas con |)","area"],["productsTitle","Título de productos","text"],["productsText","Texto de productos","area"],["aromasText","Texto de aromas","area"]]);
+  } else if(t === "contacto"){
+    body = settingsForm("contacto", [["whatsapp","WhatsApp con indicativo, sin + (ej. 573001234567)","text"],["whatsappLabel","WhatsApp como se muestra","text"],["city","Ciudad (pie de página)","text"],["instagram","Instagram (enlace completo)","text"],["facebook","Facebook","text"],["tiktok","TikTok","text"],["pinterest","Pinterest","text"],["shipCityName","Ciudad de despacho","text"],["shipCity","Tiempo en esa ciudad","text"],["shipOther","Tiempo a otras ciudades","text"]]);
+  } else {
+    const L = S.lib;
+    body = `<div class="row" style="margin-bottom:12px"><label class="btn gold">+ Subir imágenes<input class="sr" type="file" accept="image/*" multiple data-libup="1"></label><button class="btn alt" data-act="lib-load">Actualizar</button></div>` +
+      (L == null ? '<div class="card empty">Cargando…</div>' : L.length ? `<div class="ims" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">${L.map(f => `<div class="card" style="padding:8px"><div class="im" style="border-radius:8px"><img src="${esc(f.url)}" alt="" loading="lazy"></div><div class="note" style="margin:6px 0;word-break:break-all">${esc(f.path)}</div><div class="row"><button class="btn alt sm" data-act="lib-copy" data-url="${esc(f.url)}">Copiar enlace</button><button class="btn danger sm" data-act="lib-del" data-path="${esc(f.path)}">Borrar</button></div></div>`).join("")}</div>` : '<div class="card empty">Todavía no hay imágenes subidas.</div>');
+  }
+  return head("Marca y medios", "Logo, banners, textos y biblioteca de imágenes") + tabs + body;
+}
+
+/* Pagos */
+const WEBHOOK = SB_URL + "/functions/v1/wompi-webhook";
+function vPagos(){
+  const P = S.d.pay, ok = !!(P.public_key && P.integrity_secret && P.events_secret);
+  const field = (k, l, ph = "", secret = false) => `<div class="fld"><label for="pc-${k}">${l}</label><div class="row" style="flex-wrap:nowrap"><input id="pc-${k}" data-pay="${k}" type="${secret ? "password" : "text"}" value="${esc(P[k])}" placeholder="${esc(ph)}" autocomplete="off">${secret ? `<button class="btn alt sm" type="button" data-act="eye" data-for="pc-${k}">Ver</button>` : ""}</div></div>`;
+  return head("Pagos", "Cobro en línea con Wompi (Bancolombia) y cuenta destino") + `
+  <div class="${ok ? "okbox" : "warnbox"}" style="margin-bottom:14px">${ok ? "Llaves de Wompi guardadas. Puedes activar el pago en línea." : "Faltan llaves de Wompi. Sigue los pasos de abajo para conectarlas."}</div>
+  <div class="grid g2">
+    <div class="card"><h3 style="margin-bottom:10px">Formas de pago en la tienda</h3>
+      <label class="chk" style="margin-bottom:10px"><input type="checkbox" data-toggle="payOnline" ${isOn("payOnline") ? "checked" : ""}> <span><b>Pagar en línea</b> (tarjeta, PSE, Nequi, botón Bancolombia)</span></label>
+      <label class="chk"><input type="checkbox" data-toggle="payWhatsapp" ${isOn("payWhatsapp") ? "checked" : ""}> <span><b>Pedir por WhatsApp</b> (confirmas el pago manualmente)</span></label>
+      <p class="note" style="margin-top:10px">Los precios, descuentos y el total siempre se recalculan en el servidor; el cliente no puede alterarlos.</p></div>
+    <div class="card"><h3 style="margin-bottom:10px">Cuenta que recibe el dinero</h3>
+      <p class="note" style="margin-bottom:10px">Wompi deposita el dinero en la cuenta bancaria registrada en <b>tu comercio de Wompi</b> (puede ser tu cuenta Bancolombia). Para cambiar de cuenta, cámbiala en el panel de Wompi o pega aquí las llaves de otro comercio. Estos datos son solo de referencia interna.</p>
+      <div class="f2">${field("account_holder", "Titular")}${field("account_bank", "Banco", "Bancolombia")}${field("account_type", "Tipo de cuenta", "Ahorros")}${field("account_last4", "Últimos 4 dígitos", "1234")}</div></div></div>
+  <div class="card" style="margin-top:14px"><h3 style="margin-bottom:10px">Llaves de Wompi</h3>
+    <div class="f2"><div class="fld"><label for="pc-mode">Modo</label><select id="pc-mode" data-pay="mode"><option value="test" ${P.mode !== "prod" ? "selected" : ""}>Pruebas (sandbox)</option><option value="prod" ${P.mode === "prod" ? "selected" : ""}>Producción</option></select></div>
+    ${field("public_key", "Llave pública (pub_test_… / pub_prod_…)", "pub_test_xxxxx")}${field("integrity_secret", "Secreto de integridad", "test_integrity_xxxxx", true)}${field("events_secret", "Secreto de eventos", "test_events_xxxxx", true)}
+    ${field("site_url", "Dirección pública de tu tienda (https://…)", "https://tuusuario.github.io/serenia")}</div>
+    <div class="row" style="margin-top:14px"><button class="btn" data-act="pay-save">Guardar configuración</button><button class="btn alt" data-act="pay-test">Verificar llave pública</button><span id="paymsg" class="note"></span></div></div>
+  <div class="card" style="margin-top:14px"><h3 style="margin-bottom:12px">Cómo conectarlo (una sola vez)</h3><div class="grid">
+    <div class="step"><i>1</i><div>Crea tu comercio en <b>comercios.wompi.co</b> (Wompi es de Bancolombia) y registra la cuenta donde quieres recibir el dinero. Empieza en modo <b>Pruebas</b>.</div></div>
+    <div class="step"><i>2</i><div>En <b>Desarrolladores → Llaves del API</b> copia la <b>llave pública</b> y el <b>secreto de integridad</b>. En <b>Seguimiento de transacciones</b> copia el <b>secreto de eventos</b>. Pégalos arriba y guarda.</div></div>
+    <div class="step"><i>3</i><div>En Wompi, en <b>URL de eventos</b>, pega esta dirección (así se confirma cada pago y se descuenta el stock):<div class="code" style="margin-top:6px">${WEBHOOK}</div><button class="btn alt sm" style="margin-top:6px" data-act="lib-copy" data-url="${WEBHOOK}">Copiar</button></div></div>
+    <div class="step"><i>4</i><div>Publica la tienda con <b>https</b> (por ejemplo en GitHub Pages), escribe esa dirección arriba y activa “Pagar en línea”.</div></div>
+    <div class="step"><i>5</i><div>Haz una compra de prueba con las tarjetas de prueba de Wompi. Cuando todo funcione, cambia a <b>Producción</b> con tus llaves reales (<b>pub_prod_…</b>).</div></div></div></div>`;
+}
+
+/* Sistema */
+function vSistema(){
+  return head("Sistema", "Respaldo, sesión y accesos") + `<div class="grid g2">
+   <div class="card"><h3 style="margin-bottom:8px">Sesión</h3><dl class="kv"><dt>Usuario</dt><dd>${esc(S.email || "administrador")}</dd><dt>Proyecto</dt><dd>${esc(SB_URL.replace("https://", ""))}</dd></dl></div>
+   <div class="card"><h3 style="margin-bottom:8px">Respaldos</h3><div class="row"><button class="btn alt" data-act="exp-backup">Descargar catálogo y ajustes (JSON)</button><button class="btn alt" data-act="exp-orders">Pedidos (CSV)</button><button class="btn alt" data-act="exp-stock">Inventario (CSV)</button></div></div>
+   <div class="card"><h3 style="margin-bottom:8px">Agregar otro administrador</h3><p class="note">1) En Supabase → Authentication → Users crea el usuario. 2) Ejecuta en el editor SQL:</p><div class="code" style="margin-top:8px">insert into admins(user_id) select id from auth.users where email = 'correo@dominio.com';</div></div>
+   <div class="card"><h3 style="margin-bottom:8px">Acerca de</h3><p class="note">Las contraseñas y llaves se guardan en tablas protegidas (solo administradores). Los pedidos se crean únicamente a través de funciones del servidor que validan precios y stock.</p></div></div>`;
+}
+
+/* Login */
+function vLogin(msg = ""){
+  return `<div class="login"><div class="logo"><h1 style="letter-spacing:.2em">SERENIA</h1><div class="note" style="letter-spacing:.16em;text-transform:uppercase">Panel desarrollador</div></div>
+  <form class="card grid" id="lf" style="gap:12px"><div class="fld"><label for="le">Correo</label><input id="le" type="email" autocomplete="username" required></div><div class="fld"><label for="lp">Clave</label><input id="lp" type="password" autocomplete="current-password" required></div>
+  ${msg ? `<div class="warnbox">${esc(msg)}</div>` : ""}<button class="btn" type="submit">Entrar</button><p class="note">Solo para administradores registrados en la base de datos.</p></form></div>`;
+}
+/* ---------- render ---------- */
+function view(){
+  switch(S.tab){
+    case "pedidos": return vPedidos(); case "inventario": return vInventario(); case "catalogo": return vCatalogo();
+    case "promos": return vPromos(); case "marca": return vMarca(); case "pagos": return vPagos(); case "sistema": return vSistema();
+    default: return vResumen();
+  }
+}
+function render(){
+  const app = $("#app");
+  app.innerHTML = !S.authed ? vLogin(S.loginMsg) : !S.ready ? '<p style="padding:60px;text-align:center" class="note">Cargando datos…</p>' : shell(view());
+  renderLayer();
+}
+function renderLayer(){
+  const L = $("#layer"), old = L.querySelector(".sheet"), top = old ? old.scrollTop : 0, s = S.sheet;
+  const fn = s && {order:sheetOrder, stock:sheetStock, product:sheetProduct, coupon:sheetCoupon, banner:sheetBanner}[s.type];
+  L.innerHTML = fn ? `<div class="scrim" data-act="close"></div><aside class="sheet ${s.type === "product" ? "wide" : ""}" role="dialog" aria-modal="true">${fn()}</aside>` : "";
+  const n = L.querySelector(".sheet"); if(n && old) n.scrollTop = top;
+}
+async function run(fn, ok){
+  if(S.busy) return; S.busy = true;
+  try{ await fn(); if(ok) toast(ok); }
+  catch(e){ toast(e.message === "noadmin" ? "Sin permisos" : (e.message || "Error")); }
+  finally{ S.busy = false; }
+}
+async function refresh(){ await loadAll(); render(); }
+const slug = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "item";
+S.deleted = {categories:[], families:[]}; S.lib = null;
+
+/* ---------- acciones ---------- */
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if(!b) return;
+  const a = b.dataset.act, d = b.dataset;
+  switch(a){
+    case "tab": S.tab = d.id; S.sheet = null; render(); window.scrollTo(0, 0); if(d.id === "marca" && S.sub.marca === "lib") libLoad(); break;
+    case "sub": S.sub[d.k] = d.id; render(); if(d.k === "marca" && d.id === "lib") libLoad(); break;
+    case "logout": sb.logout(); S.authed = false; S.ready = false; S.sheet = null; render(); break;
+    case "reload": run(refresh, "Datos actualizados"); break;
+    case "close": S.sheet = null; renderLayer(); break;
+    case "eye": { const i = document.getElementById(d.for); i.type = i.type === "password" ? "text" : "password"; b.textContent = i.type === "password" ? "Ver" : "Ocultar"; break; }
+    /* pedidos */
+    case "order": S.sheet = {type:"order", id:d.id}; renderLayer(); break;
+    case "o-confirm": run(async () => { await sb.rpc("admin_confirm_order", {p_order:d.id}); await refresh(); renderLayer(); }, "Pago confirmado y stock descontado"); break;
+    case "o-cancel": if(!confirm("¿Cancelar el pedido y devolver las unidades al inventario?")) break;
+      run(async () => { const o = S.d.orders.find(x => x.id === d.id);
+        for(const l of (o.items || [])){ if(l.vid && l.cantidad) await sb.rpc("adjust_stock", {p_variant:l.vid, p_delta:l.cantidad, p_kind:"devolucion", p_note:"Cancelación " + (o.reference || "")}); }
+        await sb.req("/rest/v1/orders?id=eq." + d.id, {method:"PATCH", body:{status:"cancelado", stock_applied:false}, prefer:"return=minimal"});
+        await refresh(); renderLayer(); }, "Pedido cancelado y stock devuelto"); break;
+    case "exp-orders": download("pedidos-serenia.csv", csv([["Fecha","Referencia","Cliente","Celular","Correo","Ciudad","Dirección","Productos","Subtotal","Descuento","Envío","Total","Método","Pago","Estado"]].concat(S.d.orders.map(o => [o.created_at, o.reference, o.buyer_name, o.buyer_phone, o.buyer_email, o.buyer_city, o.buyer_address, (o.items || []).map(l => l.cantidad + "x " + l.producto + " (" + l.medida + ")").join(" | "), o.subtotal, o.discount, o.shipping, o.total, o.payment_method, o.payment_status, o.status])))); break;
+    case "exp-stock": download("inventario-serenia.csv", csv([["Producto","Medida","Precio","Stock"]].concat(S.d.variants.map(v => [(prodOf(v.product_id) || {}).name, v.label, v.price, v.stock == null ? "ilimitado" : v.stock])))); break;
+    case "exp-backup": download("serenia-respaldo.json", JSON.stringify({fecha:new Date().toISOString(), products:S.d.products, variants:S.d.variants, categories:S.d.categories, families:S.d.families, settings:S.d.settings, coupons:S.d.coupons}, null, 2), "application/json"); break;
+    /* inventario */
+    case "stock": S.sheet = {type:"stock", id:d.id, draft:{kind:"entrada", delta:"", note:""}}; renderLayer(); break;
+    case "stock-save": run(async () => { const dr = S.sheet.draft, n = parseInt(dr.delta); if(!n) throw new Error("Escribe una cantidad distinta de 0");
+        await sb.rpc("adjust_stock", {p_variant:S.sheet.id, p_delta:n, p_kind:dr.kind, p_note:dr.note}); S.sheet = null; await refresh(); renderLayer(); }, "Stock actualizado"); break;
+    case "stock-unl": run(async () => { await sb.req("/rest/v1/product_variants?id=eq." + encodeURIComponent(S.sheet.id), {method:"PATCH", body:{stock:null}, prefer:"return=minimal"}); S.sheet = null; await refresh(); renderLayer(); }, "Sin control de stock"); break;
+    /* catálogo */
+    case "pnew": S.sheet = {type:"product", isNew:true, draft:{id:"", name:"", category_id:(S.d.categories[0] || {}).id || "", family_id:"", aroma:"", color_name:"", color:"#c9b5a0", description:"", triangle:"", featured:false, active:true, images:[], variants:[{id:"", label:"", weight_g:"", price:"", stock:""}]}, removed:[]}; renderLayer(); break;
+    case "pedit": { const p = prodOf(d.id); S.sheet = {type:"product", isNew:false, draft:Object.assign(clone(p), {images:clone(p.images || []), variants:varsOf(p.id).map(v => clone(v))}), removed:[]}; renderLayer(); break; }
+    case "pimg-del": S.sheet.draft.images.splice(+d.i, 1); renderLayer(); break;
+    case "pimg-first": { const im = S.sheet.draft.images.splice(+d.i, 1)[0]; S.sheet.draft.images.unshift(im); renderLayer(); break; }
+    case "pvar-add": S.sheet.draft.variants.push({id:"", label:"", weight_g:"", price:"", stock:""}); renderLayer(); break;
+    case "pvar-del": { const v = S.sheet.draft.variants.splice(+d.i, 1)[0]; if(v.id) S.sheet.removed.push(v.id); renderLayer(); break; }
+    case "psave": run(saveProduct, "Producto guardado"); break;
+    case "pdel": if(!confirm("¿Eliminar este producto y todas sus medidas?")) break;
+      run(async () => { const id = S.sheet.draft.id; await sb.req("/rest/v1/product_variants?product_id=eq." + encodeURIComponent(id), {method:"DELETE"}); await sb.req("/rest/v1/products?id=eq." + encodeURIComponent(id), {method:"DELETE"}); S.sheet = null; await refresh(); }, "Producto eliminado"); break;
+    case "ladd": S.d[d.k].push(d.k === "categories" ? {id:"", name:"Nuevo tipo", image:""} : {id:"", name:"Nuevo aroma", color:"#c9b5a0"}); render(); break;
+    case "ldel": { const it = S.d[d.k].splice(+d.i, 1)[0]; if(it.id) S.deleted[d.k].push(it.id); render(); break; }
+    case "lmove": { const L = S.d[d.k], i = +d.i; if(i > 0){ [L[i-1], L[i]] = [L[i], L[i-1]]; render(); } break; }
+    case "lsave": run(async () => { const k = d.k, rows = S.d[k].map((x, i) => { const id = x.id || (slug(x.name) + "-" + uid().slice(0, 3)); x.id = id; return k === "categories" ? {id, name:x.name, image:x.image || "", position:i} : {id, name:x.name, color:x.color || "#c9b5a0", position:i}; });
+        if(rows.length) await sb.req("/rest/v1/" + k + "?on_conflict=id", {method:"POST", body:rows, prefer:"resolution=merge-duplicates,return=minimal"});
+        if(S.deleted[k].length) await sb.req("/rest/v1/" + k + "?id=in.(" + S.deleted[k].map(i => '"' + i.replace(/"/g, "") + '"').join(",") + ")", {method:"DELETE"});
+        S.deleted[k] = []; await refresh(); }, "Guardado"); break;
+    /* promociones */
+    case "cnew": S.sheet = {type:"coupon", isNew:true, draft:{code:"", kind:"percent", value:10, min_total:0, starts_at:"", ends_at:"", max_uses:"", active:true, note:""}}; renderLayer(); break;
+    case "cedit": { const c = S.d.coupons.find(x => x.code === d.id); S.sheet = {type:"coupon", isNew:false, draft:Object.assign(clone(c), {starts_at:c.starts_at ? c.starts_at.slice(0, 10) : "", ends_at:c.ends_at ? c.ends_at.slice(0, 10) : "", max_uses:c.max_uses ?? ""})}; renderLayer(); break; }
+    case "csave": run(async () => { const c = S.sheet.draft, code = String(c.code).trim().toUpperCase().replace(/\s+/g, "");
+        if(!code) throw new Error("Escribe el código"); if(!(+c.value > 0)) throw new Error("El valor debe ser mayor a 0"); if(c.kind === "percent" && +c.value > 100) throw new Error("El porcentaje no puede pasar de 100");
+        const row = {code, kind:c.kind, value:+c.value, min_total:+c.min_total || 0, active:!!c.active, starts_at:c.starts_at ? c.starts_at + "T00:00:00-05:00" : null, ends_at:c.ends_at ? c.ends_at + "T23:59:59-05:00" : null, max_uses:c.max_uses === "" ? null : +c.max_uses, note:c.note || ""};
+        await sb.req("/rest/v1/coupons?on_conflict=code", {method:"POST", body:[row], prefer:"resolution=merge-duplicates,return=minimal"}); S.sheet = null; await refresh(); }, "Cupón guardado"); break;
+    case "cdel": if(!confirm("¿Eliminar este cupón?")) break; run(async () => { await sb.req("/rest/v1/coupons?code=eq." + encodeURIComponent(S.sheet.draft.code), {method:"DELETE"}); S.sheet = null; await refresh(); }, "Cupón eliminado"); break;
+    case "bnew": S.sheet = {type:"banner", isNew:true, idx:-1, draft:{id:uid(), img:"", title:"", sub:"", link:"/velas", cta:"Ver ahora", from:"", to:"", active:true}}; renderLayer(); break;
+    case "bedit": S.sheet = {type:"banner", isNew:false, idx:+d.i, draft:Object.assign({cta:"", from:"", to:""}, clone(bannersList()[+d.i]))}; renderLayer(); break;
+    case "bimg-del": S.sheet.draft.img = ""; renderLayer(); break;
+    case "bsave": run(async () => { const B = clone(bannersList()), x = S.sheet.draft; if(!x.img) throw new Error("Sube una imagen para el banner");
+        if(S.sheet.isNew) B.push(x); else B[S.sheet.idx] = x; await setSetting("banners", B); S.sheet = null; render(); }, "Banner guardado"); break;
+    case "bdel": if(!confirm("¿Quitar este banner?")) break; run(async () => { const B = clone(bannersList()); B.splice(+d.i, 1); await setSetting("banners", B); render(); }, "Banner quitado"); break;
+    case "bmove": run(async () => { const B = clone(bannersList()), i = +d.i; if(i > 0){ [B[i-1], B[i]] = [B[i], B[i-1]]; await setSetting("banners", B); render(); } }); break;
+    /* marca */
+    case "slot-del": run(async () => { await setSetting(d.key, ""); render(); }, "Imagen quitada"); break;
+    case "sk-save": run(async () => { for(const k of d.keys.split(",")){ const el = document.getElementById("sk-" + k); if(!el) continue; await setSetting(k, el.type === "number" ? (el.value === "" ? 0 : +el.value) : el.value); } render(); }, "Cambios guardados"); break;
+    case "lib-load": libLoad(); break;
+    case "lib-copy": (navigator.clipboard ? navigator.clipboard.writeText(d.url) : Promise.reject()).then(() => toast("Enlace copiado"), () => toast(d.url)); break;
+    case "lib-del": if(!confirm("¿Borrar esta imagen? Si algún producto la usa dejará de verse.")) break; run(async () => { await sb.removeFile(d.path); await libLoad(); }, "Imagen borrada"); break;
+    /* pagos */
+    case "pay-save": run(async () => { for(const el of document.querySelectorAll("[data-pay]")) await setPay(el.dataset.pay, el.value.trim()); render(); }, "Configuración de pagos guardada"); break;
+    case "pay-test": run(async () => { const k = (document.querySelector('[data-pay="public_key"]').value || "").trim(); if(!k) throw new Error("Escribe la llave pública");
+        const host = k.startsWith("pub_test") ? "https://sandbox.wompi.co" : "https://production.wompi.co"; const r = await fetch(host + "/v1/merchants/" + encodeURIComponent(k)); const j = await r.json();
+        const m = $("#paymsg"); if(!r.ok || !j.data) { m.textContent = "Wompi no reconoce esa llave."; throw new Error("Llave no válida"); }
+        m.textContent = "Comercio: " + (j.data.name || j.data.legal_name || "OK") + " · " + (k.startsWith("pub_test") ? "modo pruebas" : "producción"); }, "Llave verificada"); break;
+  }
+});
+async function saveProduct(){
+  const d = S.sheet.draft; if(!d.name.trim()) throw new Error("Escribe el nombre");
+  const vs = d.variants.filter(v => String(v.label).trim()); if(!vs.length) throw new Error("Agrega al menos una medida con nombre");
+  const id = d.id || (slug(d.name) + "-" + uid().slice(0, 3));
+  const pos = d.position ?? (S.d.products.reduce((m, p) => Math.max(m, p.position || 0), -1) + 1);
+  await sb.req("/rest/v1/products?on_conflict=id", {method:"POST", prefer:"resolution=merge-duplicates,return=minimal", body:[{id, name:d.name.trim(), category_id:d.category_id || null, family_id:d.family_id || null, aroma:d.aroma || "", color_name:d.color_name || "", color:d.color || "#c9b5a0", description:d.description || "", triangle:d.triangle || "", featured:!!d.featured, active:!!d.active, images:d.images || [], size_guide:d.size_guide || "", position:pos}]});
+  const rows = vs.map((v, i) => ({id:v.id || (id.slice(0, 20) + "-" + uid().slice(0, 4)), product_id:id, label:String(v.label).trim(), weight_g:v.weight_g === "" || v.weight_g == null ? null : +v.weight_g, price:Math.round(+v.price) || 0, stock:v.stock === "" || v.stock == null ? null : Math.max(0, Math.round(+v.stock)), position:i}));
+  await sb.req("/rest/v1/product_variants?on_conflict=id", {method:"POST", prefer:"resolution=merge-duplicates,return=minimal", body:rows});
+  if(S.sheet.removed.length) await sb.req("/rest/v1/product_variants?id=in.(" + S.sheet.removed.map(i => '"' + i.replace(/"/g, "") + '"').join(",") + ")", {method:"DELETE"});
+  S.sheet = null; await refresh();
+}
+async function libLoad(){
+  S.lib = null; if(S.tab === "marca") render();
+  try{
+    const out = [];
+    for(const f of ["brand", "products", "banners", "categories", "library"]){
+      const items = await sb.list(f); (items || []).filter(i => i.id).forEach(i => out.push({path:f + "/" + i.name, url:sb.pub(f + "/" + i.name), t:i.created_at}));
+    }
+    out.sort((a, b) => String(b.t).localeCompare(String(a.t))); S.lib = out;
+  }catch(e){ S.lib = []; toast("No se pudo leer la biblioteca"); }
+  if(S.tab === "marca" && S.sub.marca === "lib") render();
+}
+
+/* ---------- campos ---------- */
+function setPath(obj, k, el){ obj[k] = el.type === "checkbox" ? el.checked : el.value; }
+document.addEventListener("input", e => {
+  const el = e.target, ds = el.dataset;
+  if(ds.pd !== undefined && S.sheet) return setPath(S.sheet.draft, ds.pd, el);
+  if(ds.vd !== undefined && S.sheet) { S.sheet.draft.variants[+ds.vd][ds.k] = el.value; return; }
+  if(ds.cd !== undefined && S.sheet) return setPath(S.sheet.draft, ds.cd, el);
+  if(ds.bd !== undefined && S.sheet) return setPath(S.sheet.draft, ds.bd, el);
+  if(ds.sd !== undefined && S.sheet) { S.sheet.draft[ds.sd] = el.value; return; }
+  if(ds.lname !== undefined) { S.d[ds.lname][+ds.i].name = el.value; return; }
+  if(ds.lcolor !== undefined) { S.d.families[+ds.lcolor].color = el.value; return; }
+  if(ds.of !== undefined){ S.ofilter[ds.of] = el.value; const p = el.selectionStart; render(); if(ds.of === "q"){ const n = $("#of-q"); if(n){ n.focus(); n.setSelectionRange(p, p); } } }
+});
+document.addEventListener("change", async e => {
+  const el = e.target, ds = el.dataset;
+  if(ds.tog){ run(async () => { await sb.req("/rest/v1/products?id=eq." + encodeURIComponent(ds.id), {method:"PATCH", body:{[ds.tog]:el.checked}, prefer:"return=minimal"}); prodOf(ds.id)[ds.tog] = el.checked; }, "Actualizado"); return; }
+  if(ds.toggle){ if(ds.toggle === "payOnline" && el.checked && !(S.d.pay.public_key && S.d.pay.integrity_secret && S.d.pay.events_secret)){ el.checked = false; toast("Primero guarda las llaves de Wompi"); return; }
+    run(async () => { await setSetting(ds.toggle, el.checked ? "1" : "0"); render(); }, el.checked ? "Activado" : "Desactivado"); return; }
+  if(ds.setting){ run(async () => { await setSetting(ds.setting, String(el.value)); render(); }, "Guardado"); return; }
+  if(ds.ostate){ run(async () => { await sb.req("/rest/v1/orders?id=eq." + ds.ostate, {method:"PATCH", body:{status:el.value}, prefer:"return=minimal"}); S.d.orders.find(o => o.id === ds.ostate).status = el.value; render(); renderLayer(); }, "Estado actualizado"); return; }
+  if(ds.onotes){ run(async () => { await sb.req("/rest/v1/orders?id=eq." + ds.onotes, {method:"PATCH", body:{notes:el.value}, prefer:"return=minimal"}); S.d.orders.find(o => o.id === ds.onotes).notes = el.value; }, "Nota guardada"); return; }
+  /* subidas */
+  const files = el.files ? [...el.files] : []; if(!files.length) return;
+  const up = async (folder, opts) => { toast("Subiendo imagen…"); const urls = []; for(const f of files) urls.push(await uploadFile(f, folder, opts)); el.value = ""; return urls; };
+  if(ds.pup){ run(async () => { const u = await up("products"); S.sheet.draft.images.push(...u); renderLayer(); }, "Fotos subidas"); }
+  else if(ds.bup){ run(async () => { const u = await up("banners", {max:1800}); S.sheet.draft.img = u[0]; renderLayer(); }, "Imagen subida"); }
+  else if(ds.lup !== undefined){ run(async () => { const u = await up("categories", {max:800}); S.d.categories[+ds.lup].image = u[0]; render(); }, "Foto subida (guarda los cambios)"); }
+  else if(ds.slot){ run(async () => { const u = await up("brand", ds.opts === "logo" ? {max:900, png:true} : {max:2000}); await setSetting(ds.slot, u[0]); render(); }, "Imagen guardada"); }
+  else if(ds.libup){ run(async () => { await up("library", {max:2000}); await libLoad(); }, "Imágenes subidas"); }
+});
+document.addEventListener("submit", e => {
+  if(e.target.id === "lf"){ e.preventDefault();
+    sb.login($("#le").value.trim(), $("#lp").value).then(async () => { S.authed = true; S.loginMsg = ""; render(); try{ await loadAll(); }catch(er){ toast(er.message); } render(); })
+      .catch(er => { S.loginMsg = er.message === "noadmin" ? "Esta cuenta no está registrada como administradora." : "Correo o clave incorrectos."; render(); }); }
+});
+/* tooltips de gráficos */
+document.addEventListener("mousemove", e => { const t = $("#tip"), n = e.target.closest ? e.target.closest("[data-tip]") : null; if(!n){ t.style.display = "none"; return; } t.textContent = n.dataset.tip; t.style.display = "block"; t.style.left = Math.min(innerWidth - t.offsetWidth - 8, e.clientX + 12) + "px"; t.style.top = (e.clientY + 14) + "px"; });
+document.addEventListener("keydown", e => { if(e.key === "Escape" && S.sheet){ S.sheet = null; renderLayer(); } });
+
+/* ---------- arranque ---------- */
+(async () => {
+  if(sb.tok()){
+    try{ const a = await sb.req("/rest/v1/admins?select=user_id"); if(a && a.length){ S.authed = true; render(); await loadAll(); render(); return; } }catch(e){}
+    sb.logout();
+  }
+  S.authed = false; render();
+})();
+</script>
+</body>
+</html>
