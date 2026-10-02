@@ -499,12 +499,19 @@ const deco = {
   leaves:()=>`<span class="leaf" style="top:14%;left:0;width:clamp(60px,10vw,120px)">${branch()}</span><span class="leaf" style="top:45%;right:0;transform:scaleX(-1);width:clamp(60px,10vw,120px)">${branch()}</span><span class="leaf" style="bottom:2%;left:0;width:clamp(60px,10vw,120px)">${branch("#CFA34A","#b58d37")}</span>`
 };
 
-/* ---------- navegación ---------- */
+/* ---------- navegación (el botón Atrás funciona como en cualquier página web) ---------- */
+let layerPushed = false;
+function pushLayer(){ if(layerPushed) return; try{ history.pushState({layer:1},"",location.href); layerPushed = true; }catch(e){} }
+function closeLayer(){
+  cartOpen = false; menuOpen = false; renderLayer();
+  if(layerPushed){ layerPushed = false; try{ if(history.state && history.state.layer) history.back(); }catch(e){} }
+}
+window.addEventListener("popstate", () => { if(cartOpen || menuOpen){ cartOpen = false; menuOpen = false; layerPushed = false; renderLayer(); } });
 let path = "/", listFilter = "", listType = "", listSort = "", searchOpen = false, menuOpen = false, cartOpen = false;
 function parse(h){ return (h||"").replace(/^#/,"") || "/"; }
 function go(p){
   if(p === path){ render(); return; }
-  path = p; try{ history.replaceState(null,"","#"+p) }catch(e){ try{ location.hash = p }catch(_e){} }
+  path = p; try{ history.pushState({},"","#"+p) }catch(e){ try{ location.hash = p }catch(_e){} }
   listFilter = ""; listType = ""; listSort = ""; menuOpen = false; render(); window.scrollTo(0,0);
 }
 window.addEventListener("hashchange",()=>{ const p = parse(location.hash); if(p !== path){ path = p; listFilter=""; listType=""; listSort=""; menuOpen=false; render(); window.scrollTo(0,0); } });
@@ -714,7 +721,7 @@ function addToCart(pid, open){
   if(v.stock!=="" && want > +v.stock){ toast(+v.stock>0 ? `Solo quedan ${+v.stock} unidades de esta medida.` : "Esta medida está agotada."); return; }
   if(ex) ex.qty = want; else cart.push({pid, vid:v.id, qty:sel.qty});
   saveCart(); coupon.msg=""; render(); quoteNow();
-  if(open){ cartOpen = true; renderLayer(); } else toast("Agregada al carrito");
+  if(open){ cartOpen = true; pushLayer(); renderLayer(); } else toast("Agregada al carrito");
 }
 function cartTotal(){ return cartLines().reduce((a,l)=>a+l.qty*(+l.v.price||0),0); }
 let buyer = {name:"",city:"",addr:"",phone:"",email:""};
@@ -949,11 +956,11 @@ document.addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if(!b) return;
   const a = b.dataset.act, d = b.dataset;
   switch(a){
-    case "menu": menuOpen = true; renderLayer(); break;
-    case "closemenu": menuOpen = false; renderLayer(); break;
+    case "menu": menuOpen = true; pushLayer(); renderLayer(); break;
+    case "closemenu": closeLayer(); break;
     case "search": searchOpen = !searchOpen; render(); break;
-    case "cart": cartOpen = true; renderLayer(); paintTotals(); quoteNow(); break;
-    case "closecart": cartOpen = false; renderLayer(); break;
+    case "cart": cartOpen = true; pushLayer(); renderLayer(); paintTotals(); quoteNow(); break;
+    case "closecart": closeLayer(); break;
     case "fil": if(d.kind==="type") listType = d.id; else listFilter = d.id; render(); break;
     case "img": { const p = prod(sel.id); sel.img = +d.i; $("#gmain").innerHTML = `<img src="${esc(p.images[sel.img])}" alt="${esc(p.name)}">`;
       document.querySelectorAll(".thumbs button").forEach((t,i)=>t.setAttribute("aria-current", i===sel.img)); break; }
@@ -1026,7 +1033,7 @@ document.addEventListener("submit", e => {
     if(Store.save(D)){ draft = null; toast("Producto guardado"); render(); window.scrollTo(0,0); } else { if(isNew) D.products.pop(); d._new = isNew || undefined; }
   }
 });
-document.addEventListener("keydown", e => { if(e.key==="Escape" && (cartOpen||menuOpen)){ cartOpen=false; menuOpen=false; renderLayer(); } });
+document.addEventListener("keydown", e => { if(e.key==="Escape" && (cartOpen||menuOpen)) closeLayer(); });
 
 path = parse(location.hash);
 (function(){ try{ const qs = new URLSearchParams(location.search), ref = qs.get("ref"); if(ref){ path = "/gracias/" + ref; history.replaceState(null,"",location.pathname+"#"+path); checkOrder(ref, qs.get("id")); } }catch(e){} })();

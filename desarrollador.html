@@ -559,7 +559,22 @@ function render(){
   app.innerHTML = !S.authed ? vLogin(S.loginMsg) : !S.ready ? '<p style="padding:60px;text-align:center" class="note">Cargando datos…</p>' : shell(view());
   renderLayer();
 }
+const SUBK = {inventario:"inv", catalogo:"cat", promos:"promo", marca:"marca"};
+let sheetPushed = false;
+function readHash(){
+  const m = location.hash.replace(/^#\/?/, "").split("/"), t = m[0];
+  if(TABS.some(x => x[0] === t)){ S.tab = t; const k = SUBK[t]; if(k) S.sub[k] = m[1] || undefined; } else S.tab = "resumen";
+}
+function hashNow(){ const k = SUBK[S.tab]; return "#/" + S.tab + (k && S.sub[k] ? "/" + S.sub[k] : ""); }
+function pushHash(){ const h = hashNow(); if(location.hash !== h){ try{ history.pushState({}, "", h); }catch(e){} } }
+window.addEventListener("popstate", () => {
+  if(!S.authed) return;
+  if(S.sheet){ S.sheet = null; sheetPushed = false; renderLayer(); return; }
+  readHash(); render(); if(S.tab === "marca" && S.sub.marca === "lib") libLoad();
+});
 function renderLayer(){
+  if(S.sheet && !sheetPushed){ try{ history.pushState({sheet:1}, "", location.href); sheetPushed = true; }catch(e){} }
+  else if(!S.sheet && sheetPushed){ sheetPushed = false; try{ if(history.state && history.state.sheet) history.back(); }catch(e){} }
   const L = $("#layer"), old = L.querySelector(".sheet"), top = old ? old.scrollTop : 0, s = S.sheet;
   const fn = s && {order:sheetOrder, stock:sheetStock, product:sheetProduct, coupon:sheetCoupon, banner:sheetBanner}[s.type];
   L.innerHTML = fn ? `<div class="scrim" data-act="close"></div><aside class="sheet ${s.type === "product" ? "wide" : ""}" role="dialog" aria-modal="true">${fn()}</aside>` : "";
@@ -580,8 +595,8 @@ document.addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if(!b) return;
   const a = b.dataset.act, d = b.dataset;
   switch(a){
-    case "tab": S.tab = d.id; S.sheet = null; render(); window.scrollTo(0, 0); if(d.id === "marca" && S.sub.marca === "lib") libLoad(); break;
-    case "sub": S.sub[d.k] = d.id; render(); if(d.k === "marca" && d.id === "lib") libLoad(); break;
+    case "tab": S.tab = d.id; S.sheet = null; pushHash(); render(); window.scrollTo(0, 0); if(d.id === "marca" && S.sub.marca === "lib") libLoad(); break;
+    case "sub": S.sub[d.k] = d.id; pushHash(); render(); if(d.k === "marca" && d.id === "lib") libLoad(); break;
     case "logout": sb.logout(); S.authed = false; S.ready = false; S.sheet = null; render(); break;
     case "reload": run(refresh, "Datos actualizados"); break;
     case "close": S.sheet = null; renderLayer(); break;
@@ -712,6 +727,7 @@ document.addEventListener("keydown", e => { if(e.key === "Escape" && S.sheet){ S
 
 /* ---------- arranque ---------- */
 (async () => {
+  readHash(); try{ history.replaceState({}, "", hashNow()); }catch(e){}
   if(sb.tok()){
     try{ const a = await sb.req("/rest/v1/admins?select=user_id"); if(a && a.length){ S.authed = true; render(); await loadAll(); render(); return; } }catch(e){}
     sb.logout();
